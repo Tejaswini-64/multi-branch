@@ -5,55 +5,52 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "Running pipeline on branch: ${env.BRANCH_NAME}"
-                checkout scm
+                git url: 'https://github.com/artisantek/jenkins.git'
+                echo "Running on branch: ${env.BRANCH_NAME}"
+            }
+        }
+
+        stage('Build') {
+            when { branch 'main' }  
+            steps {
+                sh """
+                    cd javaapp-pipeline
+                    mvn clean package -DskipTests
+                """
+            }
+        }
+
+        stage('Deploy') {
+            when { branch 'main' }  
+            steps {
+                sh """
+                    cd javaapp-pipeline/target
+                    if pgrep -f "java -jar" > /dev/null; then
+                        pkill -f "java -jar"
+                        echo "App was running and has been killed"
+                    else
+                        echo "App is not running"
+                    fi
+                    JENKINS_NODE_COOKIE=dontKillMe nohup java -jar *.jar > app.log 2>&1 &
+                    echo "App started successfully"
+                """
             }
         }
 
         stage('Unit Tests') {
             steps {
-                echo "Running unit tests..."
-                sh 'mvn clean test'
-            }
-        }
-
-        stage('Build') {
-            when { branch 'main' }  // Only build on main
-            steps {
-                echo "Building java-sample-21..."
-                sh 'mvn clean package'
-            }
-        }
-
-        stage('Deploy') {
-            when { branch 'main' }  // Only deploy on main
-            steps {
-                echo "Deploying java-sample-21..."
                 sh """
-                    if pgrep -f "java -jar java-sample-21-1.0.0.jar" > /dev/null; then
-                        pkill -f "java -jar java-sample-21-1.0.0.jar"
-                        echo "App was running and has been killed."
-                    else
-                        echo "App is not running."
-                    fi
-
-                    cd target
-                    JENKINS_NODE_COOKIE=dontKillMe nohup java -jar java-sample-21-1.0.0.jar > app.log 2>&1 &
-                    echo "App started successfully."
+                    cd javaapp-pipeline
+                    mvn test
                 """
             }
         }
+
     }
 
     post {
         always {
             echo "Pipeline finished for branch: ${env.BRANCH_NAME}"
-        }
-        success {
-            echo "Pipeline completed successfully!"
-        }
-        failure {
-            echo "Pipeline failed!"
         }
     }
 }
