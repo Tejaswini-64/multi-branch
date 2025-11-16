@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME = "MyApp"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            when { 
+                branch 'main' 
+            }
+            steps {
+                echo "Building ${env.APP_NAME} on main branch"
+                sh 'echo "Build step..."'
+            }
+        }
+
+        stage('Test & Scan') {
+            steps {
+                echo "Running tests and scans on ${env.BRANCH_NAME}"
+                sh 'echo "Test & scan step..."'
+            }
+        }
+
+        stage('Deploy') {
+            when { 
+                branch 'main' 
+            }
+            steps {
+                echo "Deploying ${env.APP_NAME}"
+                sh 'echo "Deploy step..."'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished for branch ${env.BRANCH_NAME}"
+        }
+    }
+}
+
