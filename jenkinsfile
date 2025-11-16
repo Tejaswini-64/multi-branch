@@ -5,7 +5,6 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/artisantek/jenkins.git'
                 echo "Running on branch: ${env.BRANCH_NAME}"
             }
         }
